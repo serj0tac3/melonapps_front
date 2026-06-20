@@ -1,0 +1,51 @@
+<div class="container mx-auto p-4 md:p-6">
+  
+  <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+    <h1 class="text-3xl font-bold text-slate-800 dark:text-white">
+      Catálogo
+    </h1>
+    
+    <app-search-bar (filtersChanged)="onSearchChange($event)" />
+  </div>
+
+  @if (activeFilterChips().length > 0) {
+    <div class="flex flex-wrap gap-2 mb-6">
+      @for (chip of activeFilterChips(); track chip.key) {
+        <span class="inline-flex items-center gap-1 px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-bold rounded-full border border-indigo-200 dark:border-indigo-800 shadow-sm">
+          {{ chip.label }}
+          <button (click)="removeFilter(chip.key)" class="hover:text-indigo-900 dark:hover:text-indigo-100 hover:scale-110 transition-transform">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </span>
+      }
+    </div>
+  }
+
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6">
+    @for (card of cards(); track card.unique_id) {
+      <app-card-item [card]="card" />
+    } @empty {
+      @if (!isLoading()) {
+        <p class="text-slate-500 col-span-full text-center py-10">
+          No se encontraron cartas.
+        </p>
+      }
+    }
+  </div>
+
+  @if (isLoading()) {
+    <div class="flex justify-center items-center py-10 mt-6">
+      <div class="animate-spin rounded-full h-10 w-10 border-b-4 border-indigo-600 dark:border-indigo-400"></div>
+    </div>
+  }
+
+  @if (!hasMoreCards() && cards().length > 0) {
+    <div class="text-center py-10 mt-6">
+      <p class="text-slate-500 dark:text-slate-400 font-medium">
+        ¡Has llegado al final! No hay más cartas por descubrir.
+      </p>
+    </div>
+  }
+</div>

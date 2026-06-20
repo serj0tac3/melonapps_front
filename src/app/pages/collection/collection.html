@@ -1,0 +1,271 @@
+<div class="min-h-screen bg-[#0f172a] text-slate-300 pb-20 md:pb-8">
+  <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+    
+    <div class="mb-8" 
+         [class.hidden]="isMobileSearchActive()" 
+         [class.block]="!isMobileSearchActive()">
+      <h1 class="text-3xl md:text-4xl font-black text-white tracking-tight mb-1">Mi bóveda</h1>
+      <p class="text-slate-400 text-sm">
+        {{ summaryStats().distinct_cards || 0 }} cartas distintas · {{ summaryStats().total_copies || 0 }} copias totales
+      </p>
+    </div>
+
+    <div class="md:block" [class.hidden]="isMobileSearchActive()">
+      
+      @if (setsProgress().length > 0) {
+        <div class="mb-8 relative group">
+          <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Progreso por expansión</h3>
+          
+          <div class="sets-carousel-wrapper">
+            
+            <button (click)="scrollCarousel('left')" class="scroll-btn hidden md:flex opacity-0 group-hover:opacity-100 absolute -left-4 z-10 transition-opacity duration-300 shadow-lg hover:bg-slate-700">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+
+            <div #carousel class="sets-carousel snap-x w-full pb-2">
+              @for (set of setsProgress(); track set.id) {
+                <div 
+                  (click)="selectSet(set)"
+                  class="snap-start shrink-0 w-64 bg-slate-900 border rounded-xl p-4 cursor-pointer transition-all hover:border-indigo-500/50"
+                  [class.border-indigo-500]="activeSet()?.id === set.id"
+                  [class.shadow-[0_0_15px_rgba(99,102,241,0.2)]]="activeSet()?.id === set.id"
+                  [class.border-slate-800]="activeSet()?.id !== set.id">
+                  <div class="flex items-center gap-3 mb-4">
+                    <span class="px-2.5 py-1 bg-slate-800 text-slate-300 font-bold text-xs rounded-md border border-slate-700">{{ set.code }}</span>
+                    <span class="font-bold text-white text-sm truncate">{{ set.name }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-xs font-bold mb-1.5">
+                    <span class="text-slate-500">Completado</span>
+                    <span [style.color]="set.percentage >= 80 ? '#34d399' : (set.percentage >= 30 ? '#fbbf24' : '#fb7185')">{{ set.percentage }}%</span>
+                  </div>
+                  <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-500" [class]="getProgressBarColor(set.percentage)" [style.width]="set.percentage + '%'"></div>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <button (click)="scrollCarousel('right')" class="scroll-btn hidden md:flex opacity-0 group-hover:opacity-100 absolute -right-4 z-10 transition-opacity duration-300 shadow-lg hover:bg-slate-700">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+            </button>
+
+          </div>
+        </div>
+      }
+
+      <div class="flex items-center border-b border-slate-800 mb-6 gap-6">
+        <button (click)="setTab('collection')" 
+                class="flex items-center gap-2 pb-3 font-bold text-sm transition-colors relative" 
+                [class.text-white]="activeTab() === 'collection'"
+                [class.text-slate-500]="activeTab() !== 'collection'"
+                [class.hover:text-slate-300]="activeTab() !== 'collection'">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+          Mi colección
+          <span class="px-2 py-0.5 bg-slate-800 text-slate-300 rounded-md text-[10px] ml-1">{{ summaryStats().distinct_cards || 0 }}</span>
+          @if (activeTab() === 'collection') { <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500 rounded-t-full"></div> }
+        </button>
+        <button (click)="setTab('wishlist')" 
+                class="flex items-center gap-2 pb-3 font-bold text-sm transition-colors relative" 
+                [class.text-white]="activeTab() === 'wishlist'"
+                [class.text-slate-500]="activeTab() !== 'wishlist'"
+                [class.hover:text-slate-300]="activeTab() !== 'wishlist'">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+          Wishlist
+          <span class="px-2 py-0.5 bg-slate-800 text-slate-300 rounded-md text-[10px] ml-1">{{ summaryStats().wishlist_count || 0 }}</span>
+          @if (activeTab() === 'wishlist') { <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-rose-500 rounded-t-full"></div> }
+        </button>
+      </div>
+    </div>
+
+    <div class="sticky top-16 z-40 mb-8 transition-all -mx-4 px-4 py-3 bg-[#0f172a]/95 backdrop-blur-xl border-b border-slate-800 shadow-xl md:top-20 md:mx-0 md:px-6 md:py-3 md:bg-slate-900/80 md:rounded-2xl md:border md:border-slate-700/50 md:shadow-2xl md:shadow-black/50">
+      
+      @if (isMobileSearchActive()) {
+        <div class="flex flex-col w-full md:hidden animate-fade-in">
+          <div class="flex items-center gap-3 w-full">
+            <div class="relative flex-1">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              </div>
+              <input type="text" [value]="searchTerm()" (input)="updateSearch($event)"
+                class="block w-full pl-9 pr-9 py-1.5 border border-slate-700 rounded-xl leading-5 bg-slate-900 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm"
+                placeholder="Buscar por nombre o código..." autofocus>
+              
+              @if (searchTerm()) {
+                <button (click)="searchTerm.set('')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              }
+            </div>
+            <button (click)="toggleMobileSearch()" class="text-indigo-400 font-bold text-sm hover:text-indigo-300 whitespace-nowrap">Cancelar</button>
+          </div>
+          
+          @if (searchTerm()) {
+            <div class="flex items-center gap-2 mt-2 animate-fade-in">
+              <span class="px-2 py-0.5 bg-slate-800 text-white text-[10px] font-bold rounded-full border border-slate-700">{{ filteredCards().length }} resultados</span>
+              <span class="text-slate-500 text-[10px]">{{ activeTab() === 'collection' ? 'en tu colección' : 'en tu wishlist' }}</span>
+            </div>
+          }
+        </div>
+      }
+
+      <div class="items-center justify-between w-full"
+           [class.hidden]="isMobileSearchActive()"
+           [class.flex]="!isMobileSearchActive()"
+           [class.md:flex]="true">
+        
+        <div class="flex items-center gap-2 text-sm text-slate-400 shrink-0">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+          @if (searchTerm()) {
+            Resultados para <span class="font-bold text-white max-w-[100px] truncate">"{{ searchTerm() }}"</span>
+          } @else if (activeSet()) {
+            <span class="font-bold text-white max-w-[120px] truncate">{{ activeSet().code }}</span>
+          } @else {
+            <span class="font-bold text-white">{{ activeTab() === 'collection' ? 'Todas las cartas' : 'Todas las deseadas' }}</span>
+          }
+        </div>
+
+        <div class="hidden md:block flex-1 max-w-md mx-6 relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+          <input type="text" [value]="searchTerm()" (input)="updateSearch($event)"
+            class="block w-full pl-9 pr-3 py-1.5 border border-slate-700 rounded-full leading-5 bg-slate-900 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm transition-all shadow-inner"
+            placeholder="Buscar...">
+          @if (searchTerm()) {
+            <button (click)="searchTerm.set('')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white">
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          }
+        </div>
+
+        <div class="flex items-center gap-3 shrink-0 mt-4 md:mt-0" [class.hidden]="isMobileSearchActive()" [class.md:flex]="true">
+          <button (click)="toggleMobileSearch()" class="md:hidden flex items-center justify-center p-1.5 bg-slate-800 text-slate-300 hover:text-white rounded-lg border border-slate-700 shadow-sm transition-colors">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </button>
+
+          <div class="flex bg-slate-950/50 border border-slate-700/50 rounded-lg p-0.5 shadow-inner">
+            <button (click)="setViewMode('grid')" class="p-1.5 rounded-md transition-all" [class.bg-slate-700]="viewMode() === 'grid'" [class.text-white]="viewMode() === 'grid'" [class.shadow-md]="viewMode() === 'grid'" [class.text-slate-500]="viewMode() !== 'grid'" [class.hover:text-white]="viewMode() !== 'grid'">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+            </button>
+            <button (click)="setViewMode('list')" class="p-1.5 rounded-md transition-all" [class.bg-slate-700]="viewMode() === 'list'" [class.text-white]="viewMode() === 'list'" [class.shadow-md]="viewMode() === 'list'" [class.text-slate-500]="viewMode() !== 'list'" [class.hover:text-white]="viewMode() !== 'list'">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    @if (isLoading()) {
+      <div class="flex justify-center py-20"><div class="animate-spin rounded-full h-10 w-10 border-b-4 border-indigo-500"></div></div>
+    }
+
+    @if (!isLoading() && filteredCards().length > 0) {
+      
+      @if (viewMode() === 'grid') {
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+          @for (c of filteredCards(); track c.card_id) {
+            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden relative flex flex-col group">
+              
+              @if (activeTab() === 'collection') {
+                <div class="absolute top-2 right-2 px-2 h-7 bg-emerald-600 text-white rounded-md flex items-center justify-center text-xs font-black shadow-md z-10 border border-emerald-500/50">x{{ c.owned_copies }}</div>
+              } @else {
+                <div class="absolute top-2 right-2 w-7 h-7 bg-slate-900/80 backdrop-blur text-rose-500 rounded-md flex items-center justify-center shadow-md z-10 border border-rose-500/30">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                </div>
+              }
+
+              <div class="aspect-[63/88] w-full relative">
+                <img [src]="c.image_url" [alt]="c.name" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent pointer-events-none"></div>
+              </div>
+              
+              <div class="absolute bottom-0 left-0 right-0 p-3 flex flex-col gap-2">
+                <div>
+                  <h4 class="text-white font-bold text-sm truncate leading-tight" [innerHTML]="c.name | highlight: searchTerm()"></h4>
+                  <p class="text-slate-400 text-[10px] font-mono mt-0.5" [innerHTML]="c.card_number | highlight: searchTerm()"></p>
+                </div>
+                
+                @if (activeTab() === 'collection') {
+                  <div class="flex items-center bg-slate-950/80 backdrop-blur-md border border-slate-800 rounded-lg overflow-hidden h-8 w-full">
+                    <button (click)="removeCopy(c)" class="flex-1 h-full flex justify-center items-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M20 12H4"/></svg></button>
+                    <button (click)="addCopy(c)" class="flex-1 h-full flex justify-center items-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors border-l border-slate-800"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg></button>
+                  </div>
+                } @else {
+                  <div class="flex items-center bg-slate-950/80 backdrop-blur-md border border-slate-800 rounded-lg overflow-hidden h-8 w-full">
+                    <button (click)="removeFromWishlist(c)" title="Quitar de la Wishlist" class="flex-1 h-full flex justify-center items-center text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                    <button (click)="moveToCollection(c)" title="¡Ya la tengo!" class="flex-1 h-full flex justify-center items-center text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors border-l border-slate-800">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    </button>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="flex flex-col gap-2">
+          @for (c of filteredCards(); track c.card_id) {
+            <div class="flex items-center gap-3 md:gap-4 bg-slate-900 border border-slate-800 rounded-xl p-2 md:p-3 hover:border-slate-700 transition-colors">
+              <img [src]="c.image_url" class="w-10 md:w-12 h-auto rounded object-cover border border-slate-700">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-0.5">
+                  <span class="px-1.5 py-0.5 bg-slate-800 text-slate-400 rounded text-[10px] font-mono whitespace-nowrap" [innerHTML]="c.card_number | highlight: searchTerm()"></span>
+                  <h4 class="text-white font-bold text-sm truncate" [innerHTML]="c.name | highlight: searchTerm()"></h4>
+                </div>
+                <div class="flex items-center gap-3 text-xs font-bold">
+                  <span class="text-orange-500">Coste {{ c.cost || 0 }}</span>
+                </div>
+              </div>
+              
+              <div class="flex items-center gap-3">
+                @if (activeTab() === 'collection') {
+                  <div class="text-emerald-400 font-black text-sm md:text-base bg-emerald-400/10 border border-emerald-500/20 px-2 py-1 rounded-md">x{{ c.owned_copies }}</div>
+                  <div class="flex items-center bg-slate-950 border border-slate-800 rounded-lg overflow-hidden h-8 w-16 md:w-20">
+                    <button (click)="removeCopy(c)" class="flex-1 h-full flex justify-center items-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M20 12H4"/></svg></button>
+                    <button (click)="addCopy(c)" class="flex-1 h-full flex justify-center items-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors border-l border-slate-800"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg></button>
+                  </div>
+                } @else {
+                  <div class="flex items-center bg-slate-950 border border-slate-800 rounded-lg overflow-hidden h-8 w-20">
+                    <button (click)="removeFromWishlist(c)" title="Quitar de la Wishlist" class="flex-1 h-full flex justify-center items-center text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                    <button (click)="moveToCollection(c)" title="¡Ya la tengo!" class="flex-1 h-full flex justify-center items-center text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors border-l border-slate-800">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    </button>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+
+    @if (!isLoading() && filteredCards().length === 0) {
+      <div class="col-span-full text-center py-20 bg-slate-900 border border-slate-800 rounded-2xl">
+        
+        @if (activeTab() === 'wishlist' && !searchTerm() && !activeSet()) {
+          <svg class="mx-auto h-16 w-16 text-rose-500/50 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+          <h3 class="text-xl font-bold text-white">Tu Wishlist está vacía</h3>
+          <p class="mt-2 text-slate-400 max-w-md mx-auto">Aún no has marcado ninguna carta como deseada. Explora el catálogo y añade las que te falten.</p>
+          <a routerLink="/" class="mt-6 inline-flex items-center px-6 py-3 font-bold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 transition-colors">Explorar Catálogo</a>
+        } @else {
+          <svg class="mx-auto h-16 w-16 text-slate-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          
+          @if (searchTerm()) {
+            <h3 class="text-xl font-bold text-white">No se encontraron resultados</h3>
+            <p class="mt-2 text-slate-400 max-w-md mx-auto">No hay ninguna coincidencia para "<span class="text-white">{{ searchTerm() }}</span>" en tu {{ activeTab() === 'collection' ? 'colección' : 'wishlist' }}.</p>
+            <button (click)="searchTerm.set('')" class="mt-6 inline-flex items-center px-6 py-3 font-bold rounded-xl text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors">Limpiar búsqueda</button>
+          } @else {
+            <h3 class="text-xl font-bold text-white">No se encontraron cartas</h3>
+            <p class="mt-2 text-slate-400 max-w-md mx-auto">Esta sección de tu bóveda está vacía. Navega por el catálogo para añadir cartas a tu colección.</p>
+            <a routerLink="/" class="mt-6 inline-flex items-center px-6 py-3 font-bold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 transition-colors">Ir al Catálogo</a>
+          }
+        }
+      </div>
+    }
+
+  </div>
+</div>

@@ -1,0 +1,52 @@
+/* Utilidad para ocultar barras de scroll manteniendo la funcionalidad táctil/deslizamiento */
+.hide-scrollbar::-webkit-scrollbar { 
+    display: none; 
+}
+.hide-scrollbar { 
+    -ms-overflow-style: none; 
+    scrollbar-width: none; 
+}
+
+.sets-carousel-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sets-carousel {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;       
+  -ms-overflow-style: none;  
+
+  &::-webkit-scrollbar {
+    display: none;       
+  }
+}
+
+.scroll-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #161A30;
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #C7C5DD;
+  transition: opacity 0.2s;
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+
+  i {
+    font-size: 16px;
+  }
+}
