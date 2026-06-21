@@ -24,15 +24,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withViewTransitions({ skipInitialTransition: true })),
 
     provideHttpClient(
-      // ✅ withFetch() eliminado — más predecible con cookies en Safari y proxies
       withInterceptors([authInterceptor]),
-
-      // ✅ Explícito: le decimos a Angular exactamente cómo se llaman
-      // la cookie y el header CSRF de Laravel
-      withXsrfConfiguration({
-        cookieName: 'XSRF-TOKEN',
-        headerName: 'X-XSRF-TOKEN',
-      })
     ),
 
     provideAppInitializer(() => {

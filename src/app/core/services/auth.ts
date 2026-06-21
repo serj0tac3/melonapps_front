@@ -25,7 +25,8 @@ export class AuthService {
   // PRIVADO: obtener cookie CSRF
   // No se expone — es un detalle de implementación, no una API pública
   // ─────────────────────────────────────────────────────────────
-  public getCsrfToken(): Observable<void> {
+  // auth.ts — hacer privado para que nadie más lo llame directamente
+  private getCsrfToken(): Observable<void> {
     return this.http.get<void>(`${this.backendUrl}/sanctum/csrf-cookie`);
   }
 

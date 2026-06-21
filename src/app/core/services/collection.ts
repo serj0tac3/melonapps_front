@@ -124,10 +124,15 @@ export class CollectionService {
    * @param cardTemplateId El ID de la plantilla de la carta (CardTemplate).
    * @returns Un Observable con el mensaje de éxito del backend.
    */
-  addWishlistCard(cardTemplateId: number): Observable<any> {
+  /* addWishlistCard(cardTemplateId: number): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/wishlist`, {
       card_template_id: cardTemplateId
     });
+  } */
+
+  addWishlistCard(cardTemplateId: number): Observable<any> {
+  // ✅ ID en la URL, no en el body
+    return this.http.post<any>(`${this.apiUrl}/wishlist/${cardTemplateId}`, {});
   }
 
   /**

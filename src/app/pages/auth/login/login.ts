@@ -2,7 +2,6 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth';
-import { switchMap } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -23,24 +22,24 @@ export class LoginComponent {
     password: ['', [Validators.required]]
   });
 
+  // login.ts — corregido: el componente solo llama a login()
   onSubmit() {
     if (this.loginForm.invalid) return;
 
     this.isLoading.set(true);
     this.errorMessage.set('');
 
-    // 1. Pedimos la cookie de seguridad
-    this.authService.getCsrfToken().pipe(
-      // 2. Cuando llega la cookie, disparamos el login real
-      switchMap(() => this.authService.login(this.loginForm.value))
-    ).subscribe({
+    // ✅ login() ya gestiona el CSRF internamente — no llamar getCsrfToken() aquí
+    this.authService.login(this.loginForm.value).subscribe({
       next: () => {
         this.isLoading.set(false);
-        this.router.navigate(['/']); // Volvemos al catálogo
+        this.router.navigate(['/']);
       },
       error: (err) => {
         this.isLoading.set(false);
-        this.errorMessage.set(err.error?.message || 'Error al iniciar sesión. Revisa tus credenciales.');
+        this.errorMessage.set(
+          err.error?.message || 'Error al iniciar sesión. Revisa tus credenciales.'
+        );
       }
     });
   }

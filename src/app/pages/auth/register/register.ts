@@ -2,7 +2,6 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth';
-import { switchMap } from 'rxjs';
 
 @Component({
   selector: 'app-register',
@@ -30,18 +29,14 @@ export class RegisterComponent {
     this.isLoading.set(true);
     this.errorMessage.set('');
 
-    // 1. Pedimos la cookie CSRF por seguridad
-    this.authService.getCsrfToken().pipe(
-      // 2. Enviamos los datos de registro
-      switchMap(() => this.authService.register(this.registerForm.value))
-    ).subscribe({
+    // ✅ register() ya gestiona el CSRF internamente — no llamar getCsrfToken() aquí
+    this.authService.register(this.registerForm.value).subscribe({
       next: () => {
         this.isLoading.set(false);
-        this.router.navigate(['/']); // Al registrarse, Laravel nos loguea y volvemos al inicio
+        this.router.navigate(['/']);
       },
       error: (err) => {
         this.isLoading.set(false);
-        // Capturamos los errores de validación de Laravel (ej. "El email ya existe")
         if (err.error?.errors) {
           const firstErrorKey = Object.keys(err.error.errors)[0];
           this.errorMessage.set(err.error.errors[firstErrorKey][0]);
