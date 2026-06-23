@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, switchMap, tap } from 'rxjs';
+import { Observable, switchMap, tap, catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 // ✅ Tipo explícito — si el backend cambia, TypeScript avisa
@@ -87,11 +87,24 @@ export class AuthService {
   // - Si hay sesión: 200 + datos del usuario
   // - Si no hay sesión: 401 — capturado en app.config.ts con catchError
   // ─────────────────────────────────────────────────────────────
-  checkAuth(): Observable<AuthUser> {
+  // ─────────────────────────────────────────────────────────────
+  // VERIFICAR SESIÓN AL ARRANCAR (APP_INITIALIZER)
+  // ─────────────────────────────────────────────────────────────
+  checkAuth(): Observable<AuthUser | null> {
     return this.http.get<AuthUser>(`${this.apiUrl}/user`).pipe(
       tap(user => {
         this.currentUser.set(user);
         this.isAuthenticated.set(true);
+      }),
+      catchError(error => {
+        // Si es 401 (No logueado), silenciamos el error
+        if (error.status === 401) {
+          this.currentUser.set(null);
+          this.isAuthenticated.set(false);
+          return of(null); 
+        }
+        // Si es un error grave del servidor (ej. 500), que sí avise
+        throw error;
       })
     );
   }
