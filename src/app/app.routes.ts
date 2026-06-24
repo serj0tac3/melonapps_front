@@ -24,6 +24,10 @@ export const routes: Routes = [
     // Aunque aún no hemos creado el componente, dejamos la ruta preparada
     loadComponent: () => import('./pages/auth/register/register').then(m => m.RegisterComponent) 
   },
+  {
+    path: 'verificar-correo',
+    loadComponent: () => import('./pages/auth/verificar-correo/verificar-correo').then(m => m.VerificarCorreo)
+  },
   // La ruta comodín siempre debe ir al final
   {
     path: '**',
