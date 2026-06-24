@@ -32,6 +32,26 @@ export class CardItemComponent implements OnInit {
     this.activeVariant.set(variant);
   }
 
+  prevVariant(event: Event) {
+    event.stopPropagation();
+    event.preventDefault();
+    if (!this.card.variants || this.card.variants.length <= 1) return;
+
+    const currentIndex = this.card.variants.findIndex(v => v.unique_id === this.activeVariant().unique_id);
+    const prevIndex = currentIndex <= 0 ? this.card.variants.length - 1 : currentIndex - 1;
+    this.activeVariant.set(this.card.variants[prevIndex]);
+  }
+
+  nextVariant(event: Event) {
+    event.stopPropagation();
+    event.preventDefault();
+    if (!this.card.variants || this.card.variants.length <= 1) return;
+
+    const currentIndex = this.card.variants.findIndex(v => v.unique_id === this.activeVariant().unique_id);
+    const nextIndex = currentIndex >= this.card.variants.length - 1 ? 0 : currentIndex + 1;
+    this.activeVariant.set(this.card.variants[nextIndex]);
+  }
+
   quickAdd(event: Event) {
     event.stopPropagation(); 
     event.preventDefault();

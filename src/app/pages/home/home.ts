@@ -24,7 +24,9 @@ export class HomeComponent {
   selectedSet = signal<any>(null); 
   
   // 🚀 NUEVO ESTADO: Controla si el panel lateral está abierto o cerrado
-  isSetSelectorOpen = signal<boolean>(false); 
+  isSetSelectorOpen = signal<boolean>(false);
+  // 🚀 NUEVO ESTADO: Controla si el botón de subir es visible
+  showScrollTopButton = signal<boolean>(false);
 
   private pendingRequest?: Subscription;
 
@@ -127,11 +129,27 @@ export class HomeComponent {
     const scrollHeight = document.documentElement.scrollHeight;
     const scrollPosition = window.innerHeight + window.scrollY;
 
+    // Lógica existente para cargar más cartas (Scroll infinito)
     if (scrollPosition >= scrollHeight - 400) {
       if (!this.isLoading() && this.hasMoreCards()) {
         this.currentPage++;
         this.loadFeaturedCards();
       }
     }
+
+    // 🚀 NUEVA LÓGICA: Mostrar/ocultar el botón de subir
+    if (window.scrollY > 400) {
+      this.showScrollTopButton.set(true);
+    } else {
+      this.showScrollTopButton.set(false);
+    }
+  }
+
+  // 🚀 NUEVA FUNCIÓN: Vuelve arriba con animación suave
+  scrollToTop(): void {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
   }
 }
