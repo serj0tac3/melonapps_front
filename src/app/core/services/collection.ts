@@ -73,9 +73,11 @@ export class CollectionService {
    * @param setId (Opcional) El ID de la expansión para filtrar el inventario.
    * @returns Un Observable con la lista paginada de cartas de la bóveda.
    */
-  getVaultCards(setId?: number): Observable<any> {
+  getVaultCards(setId?: number, page: number = 1): Observable<any> {
     // 🚀 FIX TYPE: Creamos un Record estricto para que HttpClient no se queje
-    let params: Record<string, string | number> = {};
+    let params: Record<string, string | number> = {
+      page: page // <-- Añadimos la página por defecto (1)
+    };
     
     if (setId) {
       params['set_id'] = setId;
@@ -107,14 +109,17 @@ export class CollectionService {
    * @param setId (Opcional) El ID numérico de la expansión para filtrar los resultados.
    * @returns Un Observable con el array de cartas deseadas formateadas.
    */
-  getWishlistCards(setId?: number): Observable<any> {
-    let url = `${this.apiUrl}/wishlist`;
+  getWishlistCards(setId?: number, page: number = 1): Observable<any> {
+    let params: Record<string, string | number> = {
+      page: page
+    };
     
     if (setId) {
-      url += `?set_id=${setId}`;
+      params['set_id'] = setId;
     }
     
-    return this.http.get<any>(url);
+    // Asegúrate de que esta sea la ruta correcta de tu API para la wishlist
+    return this.http.get<any>(`${this.apiUrl}/wishlist`, { params }); 
   }
 
   /**

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed, Pipe, PipeTransform, viewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, Pipe, PipeTransform, viewChild, ElementRef, HostListener } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { CollectionService } from '../../core/services/collection';
@@ -27,7 +27,6 @@ export class HighlightPipe implements PipeTransform {
 export class CollectionComponent implements OnInit {
   private collectionService = inject(CollectionService);
 
-  // Estados con Signals
   activeTab = signal<'collection' | 'wishlist'>('collection');
   activeSet = signal<any>(null);
   viewMode = signal<'grid' | 'list'>('grid');
@@ -37,15 +36,18 @@ export class CollectionComponent implements OnInit {
   summaryStats = signal<any>({});
   setsProgress = signal<any[]>([]);
   myCards = signal<any[]>([]);
-  myWishlist = signal<any[]>([]); // 🚀 NUEVO: Array para la wishlist
+  myWishlist = signal<any[]>([]);
+  
+  // 🚀 NUEVOS ESTADOS DE PAGINACIÓN
   isLoading = signal<boolean>(true);
+  isLoadingMore = signal<boolean>(false);
+  currentPage = signal<number>(1);
+  hasMoreCards = signal<boolean>(true);
 
   readonly carousel = viewChild<ElementRef<HTMLDivElement>>('carousel');
 
-  // 🚀 Filtrado Reactivo (Ahora escucha a la pestaña activa)
   filteredCards = computed(() => {
     const term = this.searchTerm().toLowerCase().trim();
-    // Elegimos la fuente de datos según la pestaña
     const cards = this.activeTab() === 'collection' ? this.myCards() : this.myWishlist();
     
     if (!term) return cards;
@@ -55,7 +57,7 @@ export class CollectionComponent implements OnInit {
   ngOnInit() {
     this.loadSummary();
     this.loadVault();
-    this.loadWishlist(); // Cargamos ambas en background al entrar
+    this.loadWishlist(); 
   }
 
   loadSummary() {
@@ -68,34 +70,90 @@ export class CollectionComponent implements OnInit {
     });
   }
 
-  loadVault(setId?: number) {
-    this.isLoading.set(true);
-    this.collectionService.getVaultCards(setId).subscribe({
+  // 🚀 ADAPTADO: Paginación en Bóveda
+  loadVault(setId?: number, page: number = 1) {
+    if (page === 1) this.isLoading.set(true);
+    else this.isLoadingMore.set(true);
+
+    this.collectionService.getVaultCards(setId, page).subscribe({
       next: (response: any) => {
-        const cardsArray = response.data ? response.data : response;
-        this.myCards.set(cardsArray);
+        let newCards = [];
+        if (Array.isArray(response)) newCards = response;
+        else if (response.data && Array.isArray(response.data)) newCards = response.data;
+        else if (response.data?.data && Array.isArray(response.data.data)) newCards = response.data.data;
+
+        if (newCards.length === 0) {
+          this.hasMoreCards.set(false);
+        } else {
+          if (page === 1) this.myCards.set(newCards);
+          else this.myCards.update(cards => [...cards, ...newCards]);
+        }
         this.isLoading.set(false);
+        this.isLoadingMore.set(false);
       },
       error: (err) => {
         console.error('Error al cargar la bóveda:', err);
         this.isLoading.set(false);
+        this.isLoadingMore.set(false);
       }
     });
   }
 
-  // 🚀 NUEVO: Cargar la Wishlist
-  loadWishlist(setId?: number) {
-    // IMPORTANTE: Asegúrate de tener getWishlistCards en tu CollectionService
-    this.collectionService.getWishlistCards(setId).subscribe({
+  // 🚀 ADAPTADO: Paginación en Wishlist
+  loadWishlist(setId?: number, page: number = 1) {
+    if (page === 1 && this.activeTab() === 'wishlist') this.isLoading.set(true);
+    else if (page > 1) this.isLoadingMore.set(true);
+
+    this.collectionService.getWishlistCards(setId, page).subscribe({
       next: (response: any) => {
-        const cardsArray = response.data ? response.data : response;
-        this.myWishlist.set(cardsArray);
+        let newCards = [];
+        if (Array.isArray(response)) newCards = response;
+        else if (response.data && Array.isArray(response.data)) newCards = response.data;
+        else if (response.data?.data && Array.isArray(response.data.data)) newCards = response.data.data;
+
+        if (newCards.length === 0) {
+          this.hasMoreCards.set(false);
+        } else {
+          if (page === 1) this.myWishlist.set(newCards);
+          else this.myWishlist.update(cards => [...cards, ...newCards]);
+        }
+        this.isLoading.set(false);
+        this.isLoadingMore.set(false);
       },
-      error: (err) => console.error('Error al cargar la wishlist:', err)
+      error: (err) => {
+        console.error('Error al cargar la wishlist:', err);
+        this.isLoading.set(false);
+        this.isLoadingMore.set(false);
+      }
     });
   }
 
+  // 🚀 NUEVO: Scroll infinito
+  @HostListener('window:scroll', [])
+  onWindowScroll(): void {
+    const scrollHeight = document.documentElement.scrollHeight;
+    const scrollPosition = window.innerHeight + window.scrollY;
+
+    // Si baja a menos de 400px del fondo, pedimos más
+    if (scrollPosition >= scrollHeight - 400) {
+      if (!this.isLoading() && !this.isLoadingMore() && this.hasMoreCards()) {
+        this.currentPage.update(p => p + 1);
+        const currentSetId = this.activeSet()?.id;
+        
+        if (this.activeTab() === 'collection') {
+          this.loadVault(currentSetId, this.currentPage());
+        } else {
+          this.loadWishlist(currentSetId, this.currentPage());
+        }
+      }
+    }
+  }
+
+  // 🚀 ADAPTADO: Resetear paginación al cambiar filtros
   selectSet(set: any) {
+    this.currentPage.set(1);
+    this.hasMoreCards.set(true);
+    
     if (this.activeSet()?.id === set.id) {
       this.activeSet.set(null);
       this.activeTab() === 'collection' ? this.loadVault() : this.loadWishlist();
@@ -105,11 +163,12 @@ export class CollectionComponent implements OnInit {
     }
   }
 
-  // 🚀 NUEVO: Al cambiar de pestaña limpiamos la selección de Set
   setTab(tab: 'collection' | 'wishlist') {
     this.activeTab.set(tab);
-    this.activeSet.set(null); // Reseteamos el filtro de expansión
-    this.searchTerm.set(''); // Limpiamos la búsqueda
+    this.activeSet.set(null); 
+    this.searchTerm.set(''); 
+    this.currentPage.set(1);
+    this.hasMoreCards.set(true);
     tab === 'collection' ? this.loadVault() : this.loadWishlist();
   }
 
@@ -165,24 +224,20 @@ export class CollectionComponent implements OnInit {
     });
   }
 
-  // 🚀 NUEVO: Quitar carta de la Wishlist
   removeFromWishlist(card: any) {
-    // IMPORTANTE: Asegúrate de tener removeWishlistCard en tu CollectionService
     this.collectionService.removeWishlistCard(card.card_id).subscribe({
       next: () => {
         this.myWishlist.update(cards => cards.filter(c => c.card_id !== card.card_id));
-        // Actualizamos el contador visual rápido
         this.summaryStats.update((stats: any) => ({...stats, wishlist_count: stats.wishlist_count - 1}));
       },
       error: (err) => console.error('Error al quitar de wishlist:', err)
     });
   }
 
-  // 🚀 NUEVO: Mover de Wishlist a Colección (1 click)
   moveToCollection(card: any) {
     this.collectionService.addCard(card.card_id, false).subscribe({
       next: () => {
-        this.removeFromWishlist(card); // Si se añade con éxito, se quita de deseados
+        this.removeFromWishlist(card); 
       },
       error: (err) => console.error('Error al mover a colección:', err)
     });
