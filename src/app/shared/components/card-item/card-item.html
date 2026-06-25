@@ -12,30 +12,36 @@
     }
   </div>
 
-  <div class="relative pt-[140%] bg-slate-100 dark:bg-slate-900 overflow-hidden">
+  <div class="relative pt-[140%] bg-slate-100 dark:bg-slate-900 overflow-hidden group/image"
+       (touchstart)="onTouchStart($event)"
+       (touchend)="onTouchEnd($event)">
     <img 
       [src]="activeVariant().image_url" 
       [alt]="activeVariant().name" 
-      class="absolute top-0 left-0 w-full h-full object-cover"
+      class="absolute top-0 left-0 w-full h-full object-cover select-none pointer-events-none"
     >
     
     @if (card.variants && card.variants.length > 1) {
       <button 
         (click)="prevVariant($event)" 
-        class="absolute left-2 top-1/2 -translate-y-1/2 z-20 p-1.5 rounded-full bg-black/30 hover:bg-black/60 text-white backdrop-blur-sm transition-all duration-300 pointer-events-auto shadow-sm"
+        class="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-16 flex items-center justify-center pointer-events-auto opacity-0 md:group-hover/image:opacity-100 outline-none group/btn"
         title="Anterior">
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
-        </svg>
+        <div class="p-2 rounded-full bg-black/40 group-hover/btn:bg-black/70 text-white backdrop-blur-sm shadow-sm transition-colors duration-300">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </div>
       </button>
 
       <button 
         (click)="nextVariant($event)" 
-        class="absolute right-2 top-1/2 -translate-y-1/2 z-20 p-1.5 rounded-full bg-black/30 hover:bg-black/60 text-white backdrop-blur-sm transition-all duration-300 pointer-events-auto shadow-sm"
+        class="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-16 flex items-center justify-center pointer-events-auto opacity-0 md:group-hover/image:opacity-100 outline-none group/btn"
         title="Siguiente">
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
-        </svg>
+        <div class="p-2 rounded-full bg-black/40 group-hover/btn:bg-black/70 text-white backdrop-blur-sm shadow-sm transition-colors duration-300">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+          </svg>
+        </div>
       </button>
     }
   </div>

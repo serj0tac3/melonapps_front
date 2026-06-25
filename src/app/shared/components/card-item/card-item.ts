@@ -3,8 +3,6 @@ import { CommonModule, CurrencyPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Card } from '../../models/card.interface';
 import { ToastService } from '../../../core/services/toast';
-
-// 🚀 1. Importamos el servicio real de la Bóveda (Verifica la ruta si es distinta)
 import { CollectionService } from '../../../core/services/collection';
 
 @Component({
@@ -18,10 +16,13 @@ export class CardItemComponent implements OnInit {
   
   activeVariant = signal<Card>({} as Card);
   isAdding = signal<boolean>(false);
+  isWishlisting = signal<boolean>(false);
+
+  // 🚀 Variables para el Swipe Nativo
+  private touchStartX = 0;
+  private touchEndX = 0;
 
   private toastService = inject(ToastService);
-  
-  // 🚀 2. Inyectamos el servicio real
   private collectionService = inject(CollectionService); 
 
   ngOnInit() {
@@ -32,9 +33,37 @@ export class CardItemComponent implements OnInit {
     this.activeVariant.set(variant);
   }
 
-  prevVariant(event: Event) {
-    event.stopPropagation();
-    event.preventDefault();
+  // 🚀 Lógica para detectar el deslizamiento del dedo
+  onTouchStart(event: TouchEvent) {
+    this.touchStartX = event.changedTouches[0].screenX;
+  }
+
+  onTouchEnd(event: TouchEvent) {
+    this.touchEndX = event.changedTouches[0].screenX;
+    this.handleSwipe();
+  }
+
+  private handleSwipe() {
+    if (!this.card.variants || this.card.variants.length <= 1) return;
+
+    const swipeThreshold = 50; // Píxeles mínimos para que cuente como deslizamiento
+    const diff = this.touchStartX - this.touchEndX;
+
+    if (diff > swipeThreshold) {
+      // Swipe hacia la izquierda (Ver siguiente)
+      this.nextVariant();
+    } else if (diff < -swipeThreshold) {
+      // Swipe hacia la derecha (Ver anterior)
+      this.prevVariant();
+    }
+  }
+
+  // 🚀 Hemos hecho el 'event' opcional para poder llamarlo desde el swipe
+  prevVariant(event?: Event) {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
     if (!this.card.variants || this.card.variants.length <= 1) return;
 
     const currentIndex = this.card.variants.findIndex(v => v.unique_id === this.activeVariant().unique_id);
@@ -42,9 +71,11 @@ export class CardItemComponent implements OnInit {
     this.activeVariant.set(this.card.variants[prevIndex]);
   }
 
-  nextVariant(event: Event) {
-    event.stopPropagation();
-    event.preventDefault();
+  nextVariant(event?: Event) {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
     if (!this.card.variants || this.card.variants.length <= 1) return;
 
     const currentIndex = this.card.variants.findIndex(v => v.unique_id === this.activeVariant().unique_id);
@@ -59,10 +90,8 @@ export class CardItemComponent implements OnInit {
     const current = this.activeVariant();
     this.isAdding.set(true);
 
-    // 🚀 3. LLAMADA REAL A TU BACKEND (LARAVEL)
     this.collectionService.addCard(current.id, false).subscribe({
       next: () => {
-        // Actualizamos visualmente el frontend
         current.owned_copies = (current.owned_copies || 0) + 1;
         this.toastService.success('¡Añadida!', `1x ${current.name} a tu Bóveda.`);
         this.isAdding.set(false);
@@ -75,8 +104,6 @@ export class CardItemComponent implements OnInit {
     });
   }
 
-  isWishlisting = signal<boolean>(false);
-
   toggleWishlist(event: Event) {
     event.stopPropagation(); 
     event.preventDefault();
@@ -85,7 +112,6 @@ export class CardItemComponent implements OnInit {
     this.isWishlisting.set(true);
 
     if (current.is_wishlisted) {
-      // 💔 Si ya la deseaba, la quitamos
       this.collectionService.removeWishlistCard(current.id).subscribe({
         next: () => {
           current.is_wishlisted = false;
@@ -98,7 +124,6 @@ export class CardItemComponent implements OnInit {
         }
       });
     } else {
-      // ❤️ Si no la deseaba, la añadimos
       this.collectionService.addWishlistCard(current.id).subscribe({
         next: () => {
           current.is_wishlisted = true;
