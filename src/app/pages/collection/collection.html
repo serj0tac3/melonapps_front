@@ -64,6 +64,15 @@
           <span class="px-2 py-0.5 bg-slate-800 text-slate-300 rounded-md text-[10px] ml-1">{{ summaryStats().distinct_cards || 0 }}</span>
           @if (activeTab() === 'collection') { <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500 rounded-t-full"></div> }
         </button>
+        <button (click)="setTab('favorites')" 
+                class="flex items-center gap-2 pb-3 font-bold text-sm transition-colors relative" 
+                [class.text-white]="activeTab() === 'favorites'"
+                [class.text-slate-500]="activeTab() !== 'favorites'"
+                [class.hover:text-slate-300]="activeTab() !== 'favorites'">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+          Favoritas
+          @if (activeTab() === 'favorites') { <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-500 rounded-t-full"></div> }
+        </button>
         <button (click)="setTab('wishlist')" 
                 class="flex items-center gap-2 pb-3 font-bold text-sm transition-colors relative" 
                 [class.text-white]="activeTab() === 'wishlist'"
@@ -165,13 +174,15 @@
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
           @for (c of filteredCards(); track c.card_id) {
             
-            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col group hover:border-slate-700 transition-colors shadow-sm">
+            <div class="bg-slate-900 border rounded-xl overflow-hidden flex flex-col group transition-all duration-300"
+                 [ngClass]="c.is_favorite ? 'border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.2)] hover:shadow-[0_0_25px_rgba(234,179,8,0.35)]' : 'border-slate-800 hover:border-slate-700 shadow-sm'">
               
               <div class="aspect-[63/88] w-full bg-slate-950 relative">
                 <img [src]="c.image_url" [alt]="c.name" class="absolute inset-0 w-full h-full object-cover">
               </div>
               
-              <div class="p-3 flex flex-col gap-3 flex-grow border-t border-slate-800/50">
+              <div class="p-3 flex flex-col gap-3 flex-grow border-t"
+                   [ngClass]="c.is_favorite ? 'border-yellow-500/20' : 'border-slate-800/50'">
                 
                 <div class="flex justify-between items-start gap-2">
                   <div class="min-w-0 flex-1">
@@ -179,7 +190,7 @@
                     <p class="text-slate-400 text-[10px] font-mono mt-1" [innerHTML]="c.card_number | highlight: searchTerm()"></p>
                   </div>
                   
-                  @if (activeTab() === 'collection') {
+                  @if (activeTab() === 'collection' || activeTab() === 'favorites') {
                     <span class="shrink-0 px-2 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-md text-xs font-black shadow-sm">
                       x{{ c.owned_copies }}
                     </span>
@@ -191,22 +202,35 @@
                 </div>
 
                 <div class="mt-auto">
-                  @if (activeTab() === 'collection') {
-                    <div class="flex items-center bg-[#0f172a] border border-slate-700 rounded-lg overflow-hidden h-9 w-full">
-                      <button (click)="removeCopy(c)" class="flex-1 h-full flex justify-center items-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4"/></svg>
+                  @if (activeTab() === 'collection' || activeTab() === 'favorites') {
+                    
+                    <div class="flex items-center gap-2">
+                      <button (click)="toggleFavorite(c)" 
+                              title="Marcar/Desmarcar como favorita"
+                              class="flex items-center justify-center shrink-0 h-9 w-9 rounded-lg border transition-colors"
+                              [ngClass]="c.is_favorite ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30 hover:bg-yellow-500/20' : 'bg-[#0f172a] text-slate-400 border-slate-700 hover:text-yellow-500 hover:bg-slate-800'">
+                        <svg class="w-4 h-4" [attr.fill]="c.is_favorite ? 'currentColor' : 'none'" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                        </svg>
                       </button>
-                      <div class="w-px h-full bg-slate-700"></div>
-                      <button (click)="addCopy(c)" class="flex-1 h-full flex justify-center items-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                      </button>
+
+                      <div class="flex flex-1 items-center bg-[#0f172a] border border-slate-700 rounded-lg overflow-hidden h-9">
+                        <button (click)="removeCopy(c)" class="flex-1 h-full flex justify-center items-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+                          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4"/></svg>
+                        </button>
+                        <div class="w-px h-full bg-slate-700"></div>
+                        <button (click)="addCopy(c)" class="flex-1 h-full flex justify-center items-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+                          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                        </button>
+                      </div>
                     </div>
+
                   } @else {
                     <div class="flex items-center gap-2">
-                      <button (click)="removeFromWishlist(c)" title="Quitar de la Wishlist" class="flex-1 h-9 flex justify-center items-center text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-lg transition-colors">
+                      <button (click)="removeFromWishlist(c)" class="flex-1 h-9 flex justify-center items-center text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-lg transition-colors">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       </button>
-                      <button (click)="moveToCollection(c)" title="¡Ya la tengo!" class="flex-1 h-9 flex justify-center items-center text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-lg transition-colors">
+                      <button (click)="moveToCollection(c)" class="flex-1 h-9 flex justify-center items-center text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-lg transition-colors">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                       </button>
                     </div>

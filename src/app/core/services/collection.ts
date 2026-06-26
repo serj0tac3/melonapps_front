@@ -145,4 +145,14 @@ export class CollectionService {
   removeWishlistCard(cardTemplateId: number): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/wishlist/${cardTemplateId}`);
   }
+  
+  /**
+   * MARCAR/DESMARCAR COMO FAVORITA
+   * Llama al endpoint PATCH para alternar el estado is_favorite de una carta en la bóveda.
+   *
+   * @param userCardId El ID del registro en la tabla pivote (user_card_id)
+   */
+  toggleFavorite(userCardId: number): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/collection/${userCardId}/favorite`, {});
+  }
 }

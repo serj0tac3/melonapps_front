@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal, computed, Pipe, PipeTransform, viewChild, ElementRef, HostListener } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { CollectionService } from '../../core/services/collection';
 
@@ -20,14 +21,14 @@ export class HighlightPipe implements PipeTransform {
 @Component({
   selector: 'app-collection',
   standalone: true,
-  imports: [RouterLink, HighlightPipe],
+  imports: [RouterLink, HighlightPipe, CommonModule],
   templateUrl: './collection.html',
   styleUrl: './collection.css'
 })
 export class CollectionComponent implements OnInit {
   private collectionService = inject(CollectionService);
 
-  activeTab = signal<'collection' | 'wishlist'>('collection');
+  activeTab = signal<'collection' | 'wishlist' | 'favorites'>('collection');
   activeSet = signal<any>(null);
   viewMode = signal<'grid' | 'list'>('grid');
   searchTerm = signal<string>('');
@@ -48,7 +49,11 @@ export class CollectionComponent implements OnInit {
 
   filteredCards = computed(() => {
     const term = this.searchTerm().toLowerCase().trim();
-    const cards = this.activeTab() === 'collection' ? this.myCards() : this.myWishlist();
+    let cards: any[] = [];
+    
+    if (this.activeTab() === 'collection') cards = this.myCards();
+    else if (this.activeTab() === 'wishlist') cards = this.myWishlist();
+    else if (this.activeTab() === 'favorites') cards = this.myCards().filter(c => c.is_favorite);
     
     if (!term) return cards;
     return cards.filter(c => c.name.toLowerCase().includes(term) || c.card_number.toLowerCase().includes(term));
@@ -99,7 +104,6 @@ export class CollectionComponent implements OnInit {
     });
   }
 
-  // 🚀 ADAPTADO: Paginación en Wishlist
   loadWishlist(setId?: number, page: number = 1) {
     if (page === 1 && this.activeTab() === 'wishlist') this.isLoading.set(true);
     else if (page > 1) this.isLoadingMore.set(true);
@@ -110,6 +114,12 @@ export class CollectionComponent implements OnInit {
         if (Array.isArray(response)) newCards = response;
         else if (response.data && Array.isArray(response.data)) newCards = response.data;
         else if (response.data?.data && Array.isArray(response.data.data)) newCards = response.data.data;
+
+        // 🚀 FIX: Normalizamos el ID para que HTML y las funciones no fallen buscando 'card_id'
+        newCards = newCards.map((c: any) => ({
+          ...c,
+          card_id: c.card_id || c.id
+        }));
 
         if (newCards.length === 0) {
           this.hasMoreCards.set(false);
@@ -163,13 +173,18 @@ export class CollectionComponent implements OnInit {
     }
   }
 
-  setTab(tab: 'collection' | 'wishlist') {
+  setTab(tab: 'collection' | 'wishlist' | 'favorites') {
     this.activeTab.set(tab);
     this.activeSet.set(null); 
     this.searchTerm.set(''); 
     this.currentPage.set(1);
     this.hasMoreCards.set(true);
-    tab === 'collection' ? this.loadVault() : this.loadWishlist();
+    
+    if (tab === 'wishlist') {
+      this.loadWishlist();
+    } else {
+      this.loadVault();
+    }
   }
 
   setViewMode(mode: 'grid' | 'list') {
@@ -224,10 +239,30 @@ export class CollectionComponent implements OnInit {
     });
   }
 
+  // 🚀 NUEVO: Función para alternar la estrella
+  toggleFavorite(card: any) {
+    // Cambiamos el estado visualmente al instante para que se sienta súper rápido
+    card.is_favorite = !card.is_favorite;
+    
+    this.collectionService.toggleFavorite(card.user_card_id).subscribe({
+      next: (res) => {
+        // El backend confirma el cambio. No hacemos nada más porque ya lo cambiamos en la UI
+      },
+      error: (err) => {
+        console.error('Error al marcar favorita:', err);
+        // Si falla, revertimos el cambio visual
+        card.is_favorite = !card.is_favorite;
+      }
+    });
+  }
+
   removeFromWishlist(card: any) {
-    this.collectionService.removeWishlistCard(card.card_id).subscribe({
+    // 🚀 FIX: Usamos card_id si existe, si no, usamos id
+    const targetId = card.card_id || card.id; 
+    
+    this.collectionService.removeWishlistCard(targetId).subscribe({
       next: () => {
-        this.myWishlist.update(cards => cards.filter(c => c.card_id !== card.card_id));
+        this.myWishlist.update(cards => cards.filter(c => (c.card_id || c.id) !== targetId));
         this.summaryStats.update((stats: any) => ({...stats, wishlist_count: stats.wishlist_count - 1}));
       },
       error: (err) => console.error('Error al quitar de wishlist:', err)
@@ -235,7 +270,10 @@ export class CollectionComponent implements OnInit {
   }
 
   moveToCollection(card: any) {
-    this.collectionService.addCard(card.card_id, false).subscribe({
+    // 🚀 FIX: Aseguramos el ID antes de mandarlo
+    const targetId = card.card_id || card.id;
+    
+    this.collectionService.addCard(targetId, false).subscribe({
       next: () => {
         this.removeFromWishlist(card); 
       },
